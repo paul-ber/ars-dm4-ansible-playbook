@@ -30,7 +30,7 @@
 - name: Run testssl.sh verification
   become: true
   ansible.builtin.command:
-    cmd: /usr/local/testssl.sh/testssl.sh https://127.0.0.1
+    cmd: /usr/local/testssl.sh https://127.0.0.1
   register: testssl_output
   changed_when: false
 

@@ -27,7 +27,7 @@
 - name: Install testssl.sh
   become: true
   ansible.builtin.get_url:
-    url: https://testssl.sh
+    url: https://testssl.sh/testssl.sh
     dest: /usr/local/bin/testssl.sh
     mode: '0755'
   when: not testssl_stat.stat.exists

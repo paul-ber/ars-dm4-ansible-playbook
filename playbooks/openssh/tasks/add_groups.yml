@@ -1,4 +1,0 @@
-- name: Add group TOPGUN
-  become: true
-  ansible.builtin.group:
-    name: TOPGUN

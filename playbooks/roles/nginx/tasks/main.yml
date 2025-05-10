@@ -20,10 +20,12 @@
 
 - name: Install testssl.sh
   become: true
-  ansible.builtin.git:
-    repo: https://github.com/drwetter/testssl.sh.git
-    dest: /usr/local/testssl.sh
-    version: master
+  block:
+    - name: Download testssl.sh
+      ansible.builtin.get_url:
+        url: https://testssl.sh
+        dest: /usr/local/bin/testssl.sh
+        mode: '0755'
 
 - name: Run testssl.sh verification
   become: true

@@ -1,0 +1,57 @@
+- name: Ensure NGINX is installed with the latest version
+  become: true
+  ansible.builtin.apt:
+    name: nginx
+    state: present
+  notify:
+    - Restart NGINX
+
+- name: Remove NGINX default site
+  become: true
+  ansible.builtin.file:
+    path: "/etc/nginx/sites-enabled/default"
+    state: absent
+  notify:
+    - Restart NGINX
+
+- name: Create all files for nginx
+  ansible.builtin.include_tasks:
+    file: add_files.yml
+
+- name: Install testssl.sh
+  become: true
+  ansible.builtin.git:
+    repo: https://github.com/drwetter/testssl.sh.git
+    dest: /usr/local/testssl.sh
+    version: master
+
+- name: Run testssl.sh verification
+  become: true
+  ansible.builtin.command:
+    cmd: /usr/local/testssl.sh/testssl.sh https://127.0.0.1
+  register: testssl_output
+  changed_when: false
+
+- name: Ensure SSL directory exists
+  become: true
+  ansible.builtin.file:
+    path: /etc/nginx/ssl
+    state: directory
+    mode: '0700'
+
+- name: Include SSL secrets
+  ansible.builtin.include_vars:
+    file: ssl_secrets.yml
+
+- name: Install SSL certificates
+  become: true
+  ansible.builtin.copy:
+    content: "{{ item.content }}"
+    dest: "{{ item.dest }}"
+    mode: '0600'
+  with_items:
+    - { content: "{{ server_ssl_cert }}", dest: "/etc/nginx/ssl/server.crt" }
+    - { content: "{{ private_ssl_key }}", dest: "/etc/nginx/ssl/server.key" }
+    - { content: "{{ ca_ssl_cert }}", dest: "/etc/nginx/ssl/ca.crt" }
+  notify:
+    - Restart NGINX

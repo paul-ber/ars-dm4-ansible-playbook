@@ -1,0 +1,25 @@
+- name: Add user maverik
+  become: true
+  ansible.builtin.user:
+    name: maverik
+    group: TOPGUN
+    password: '!'  # Désactive le mot de passe
+    shell: /bin/bash
+    state: present
+
+- name: Add user charlie
+  become: true
+  ansible.builtin.user:
+    name: charlie
+    group: TOPGUN
+    password: '!'  # Désactive le mot de passe
+    shell: /bin/bash
+    state: present
+
+- name: Add user goose
+  become: true
+  ansible.builtin.user:
+    name: goose
+    group: TOPGUN
+    shell: /bin/bash
+    state: present

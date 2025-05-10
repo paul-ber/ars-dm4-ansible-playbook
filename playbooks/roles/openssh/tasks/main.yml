@@ -1,0 +1,31 @@
+- name: Install required packages
+  ansible.builtin.include_tasks:
+    file: install.yml
+
+- name: Add groups
+  ansible.builtin.include_tasks:
+    file: add_groups.yml
+
+- name: Add users
+  ansible.builtin.include_tasks:
+    file: add_users.yml
+
+- name: Configure SSH server
+  ansible.builtin.include_tasks:
+    file: configure_ssh.yml
+
+- name: Configure PAM
+  ansible.builtin.include_tasks:
+    file: configure_pam.yml
+
+- name: Configure Google Authenticator
+  ansible.builtin.include_tasks:
+    file: configure_google_auth.yml
+
+- name: Configure SSH keys
+  ansible.builtin.include_tasks:
+    file: configure_ssh_keys.yml
+
+- name: Configure sudo rights
+  ansible.builtin.include_tasks:
+    file: configure_sudo.yml

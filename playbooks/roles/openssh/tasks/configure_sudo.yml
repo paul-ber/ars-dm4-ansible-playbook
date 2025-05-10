@@ -1,0 +1,7 @@
+- name: Configure sudo rights
+  become: true
+  ansible.builtin.template:
+    src: sudoers.j2
+    dest: /etc/sudoers.d/topgun
+    mode: '0440'
+    validate: 'visudo -cf %s'

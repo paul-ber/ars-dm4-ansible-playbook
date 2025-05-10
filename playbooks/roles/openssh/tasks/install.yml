@@ -1,0 +1,9 @@
+- name: Install required packages
+  become: true
+  ansible.builtin.apt:
+    name:
+      - openssh-server
+      - libpam-google-authenticator
+      - sudo
+    state: present
+    update_cache: true

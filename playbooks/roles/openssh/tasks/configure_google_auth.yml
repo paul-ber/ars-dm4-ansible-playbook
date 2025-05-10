@@ -1,0 +1,15 @@
+- name: Generate Google Authenticator configuration for maverik
+  become: true
+  become_user: maverik
+  ansible.builtin.command:
+    cmd: google-authenticator -t -d -f -r 3 -R 30
+  args:
+    creates: /home/maverik/.google_authenticator
+
+- name: Generate Google Authenticator configuration for charlie
+  become: true
+  become_user: charlie
+  ansible.builtin.command:
+    cmd: google-authenticator -t -d -f -r 3 -R 30
+  args:
+    creates: /home/charlie/.google_authenticator

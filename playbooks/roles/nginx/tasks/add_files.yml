@@ -1,0 +1,173 @@
+- name: Create nginx configuration
+  become: true
+  ansible.builtin.copy:
+    dest: "/etc/nginx/sites-enabled/epitaf.conf"
+    content: |
+        # Configuration principale
+        server {
+          listen 80;
+          server_name default_server www.epitaf.local blog.epitaf.local;
+          return 301 https://$host$request_uri;
+        }
+
+        # Configuration HTTPS pour www.epitaf.local
+        server {
+          listen 443 ssl;
+          server_name default_server www.epitaf.local;
+          root /usr/share/nginx/html/topgun;
+
+          # Certificats SSL
+          ssl_certificate /etc/nginx/ssl/server.crt;
+          ssl_certificate_key /etc/nginx/ssl/server.key;
+          ssl_client_certificate /etc/nginx/ssl/ca.crt;
+          ssl_verify_client on;
+
+          # Configuration SSL selon ANSSI
+          ssl_protocols TLSv1.2 TLSv1.3;
+          ssl_prefer_server_ciphers on;
+          ssl_ciphers "EECDH+AESGCM:EDH+AESGCM:AES256+EECDH:AES256+EDH";
+          ssl_session_cache shared:SSL:10m;
+          ssl_session_timeout 10m;
+          ssl_session_tickets off;
+
+          # En-têtes de sécurité pour XSS, clickjacking et CSP
+          add_header X-XSS-Protection "1; mode=block" always;
+          add_header X-Content-Type-Options "nosniff" always;
+          add_header X-Frame-Options "DENY" always;
+          add_header Content-Security-Policy "default-src 'self'; script-src 'self'; object-src 'none';" always;
+          add_header Permissions-Policy "camera=(), microphone=(), geolocation=()" always;
+          add_header Referrer-Policy "no-referrer" always;
+
+          # Logging avancé
+          access_log /var/log/nginx/www.epitaf.local-access.log combined buffer=512k flush=1m;
+          error_log /var/log/nginx/www.epitaf.local-error.log warn;
+
+          location / {
+            if ($request_method !~ ^(GET|POST|PUT)$) {
+              return 405;
+            }
+          }
+
+          location /blog {
+            return 301 https://blog.epitaf.local/blog;
+          }
+        }
+
+        # Configuration HTTPS pour blog.epitaf.local
+        server {
+          listen 443 ssl;
+          server_name blog.epitaf.local;
+
+          # Certificats SSL
+          ssl_certificate /etc/nginx/ssl/server.crt;
+          ssl_certificate_key /etc/nginx/ssl/server.key;
+          ssl_client_certificate /etc/nginx/ssl/ca.crt;
+          ssl_verify_client on;
+
+          # Configuration SSL selon ANSSI
+          ssl_protocols TLSv1.2 TLSv1.3;
+          ssl_prefer_server_ciphers on;
+          ssl_ciphers "EECDH+AESGCM:EDH+AESGCM:AES256+EECDH:AES256+EDH";
+          ssl_session_cache shared:SSL:10m;
+          ssl_session_timeout 10m;
+          ssl_session_tickets off;
+
+          # En-têtes de sécurité pour XSS, clickjacking et CSP
+          add_header X-XSS-Protection "1; mode=block" always;
+          add_header X-Content-Type-Options "nosniff" always;
+          add_header X-Frame-Options "DENY" always;
+          add_header Content-Security-Policy "default-src 'self'; script-src 'self'; object-src 'none';" always;
+          add_header Permissions-Policy "camera=(), microphone=(), geolocation=()" always;
+          add_header Referrer-Policy "no-referrer" always;
+
+          # Logging avancé
+          access_log /var/log/nginx/blog.epitaf.local-access.log combined buffer=512k flush=1m;
+          error_log /var/log/nginx/blog.epitaf.local-error.log warn;
+
+          location / {
+            if ($request_method !~ ^(GET|POST|PUT)$) {
+              return 405;
+            }
+          }
+
+          location /blog {
+            if ($request_method !~ ^(GET|POST|PUT)$) {
+              return 405;
+            }
+
+            proxy_pass http://127.0.0.1:8000;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+          }
+        }
+  notify:
+    - Restart NGINX
+
+- name: Configure nginx.conf to hide server tokens
+  become: true
+  ansible.builtin.copy:
+    dest: "/etc/nginx/nginx.conf"
+    content: |
+      user www-data;
+      worker_processes auto;
+      pid /run/nginx.pid;
+      include /etc/nginx/modules-enabled/*.conf;
+
+      events {
+        worker_connections 768;
+        # multi_accept on;
+      }
+
+      http {
+        # Hide server tokens (empreinte numérique)
+        server_tokens off;
+        
+        # Basic settings
+        sendfile on;
+        tcp_nopush on;
+        tcp_nodelay on;
+        keepalive_timeout 65;
+        types_hash_max_size 2048;
+        
+        include /etc/nginx/mime.types;
+        default_type application/octet-stream;
+
+        # Format de log avancé pour tracer les incidents et interactions
+        log_format detailed '$remote_addr - $remote_user [$time_local] '
+                         '"$request" $status $body_bytes_sent '
+                         '"$http_referer" "$http_user_agent" '
+                         '$request_time "$http_x_forwarded_for" '
+                         '$connection $connection_requests';
+        
+        access_log /var/log/nginx/access.log detailed;
+        error_log /var/log/nginx/error.log warn;
+
+        # SSL settings
+        ssl_protocols TLSv1.2 TLSv1.3;
+        ssl_prefer_server_ciphers on;
+
+        # Écoute IPv4 uniquement
+        server {
+          listen 80;
+          # Ne pas écouter en IPv6
+          # listen [::]:80;
+        }
+
+        # Gzip settings
+        gzip on;
+
+        # Virtual Host configs
+        include /etc/nginx/conf.d/*.conf;
+        include /etc/nginx/sites-enabled/*;
+      }
+  notify:
+    - Restart NGINX
+
+- name: Ensure SSL directory exists
+  become: true
+  ansible.builtin.file:
+    path: /etc/nginx/ssl
+    state: directory
+    mode: '0700'

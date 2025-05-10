@@ -1,0 +1,75 @@
+- name: Create nginx configuration
+  become: true
+  ansible.builtin.copy:
+    dest: "/etc/nginx/sites-enabled/epitaf.conf"
+    content: |
+        #server {
+        #  listen 80;
+        #  server_name "";
+        #  return 301 https://$host$request_uri;
+        #}
+
+        server {
+          listen        80;
+          #listen        443 ssl;
+          server_name   default_server www.epitaf.local;
+          root          /usr/share/nginx/html/topgun;
+
+          add_header X-Frame-Options "SAMEORIGIN" always;
+          add_header X-Content-Type-Options nosniff;
+          add_header X-XSS-Protection "1; mode=block";
+          
+          # FIXME
+          #add_header Content-Security-Policy "default-src 'self' *.memo-linux.com; img-src 'self' data: http: https: *.memo-linux.com; font-src 'self' data: http: https: fonts.googleapis.com";
+          #add_header Strict-Transport-Security "max-age=31536000; includeSubdomains";
+
+          location / {
+            if ($request_method !~ ^(GET|POST|PUT)$) {
+              return 405;
+            }
+          }
+
+          location /blog {
+            return 301 https://blog.epitaf.local;
+          }
+        }
+
+        server {
+          listen  80;
+          #listen        443 ssl;
+          server_name blog.epitaf.local;
+
+          location / {
+            if ($request_method !~ ^(GET|POST|PUT)$) {
+              return 405;
+            }
+          }
+
+          location /blog {
+            if ($request_method !~ ^(GET|POST|PUT)$) {
+              return 405;
+            }
+
+            proxy_pass http://0.0.0.0:8000;
+          }
+        }
+  notify:
+    - Restart NGINX
+
+- name: Create TOP GUN directory
+  become: true
+  ansible.builtin.file:
+    path: "/usr/share/nginx/html/topgun"
+    state: directory
+  notify:
+    - Restart NGINX
+
+
+- name: Add TOP GUN index.html
+  become: true
+  ansible.builtin.copy:
+    dest: "/usr/share/nginx/html/topgun/index.html"
+    content: |
+      TOP GUN
+  notify:
+    - Restart NGINX

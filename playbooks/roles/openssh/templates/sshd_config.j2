@@ -1,0 +1,38 @@
+# Écoute uniquement sur IPv4 port 22
+Port 22
+AddressFamily inet
+ListenAddress 0.0.0.0
+
+# Refus des connexions root
+PermitRootLogin no
+
+# Logging maximal
+SyslogFacility AUTH
+LogLevel VERBOSE
+
+# Configuration d'authentification
+PasswordAuthentication no
+ChallengeResponseAuthentication yes
+UsePAM yes
+AuthenticationMethods publickey,keyboard-interactive
+
+# Configuration spécifique par utilisateur
+Match User maverik
+    AuthenticationMethods keyboard-interactive
+    PasswordAuthentication no
+    PubkeyAuthentication no
+
+Match User charlie
+    AuthenticationMethods publickey,keyboard-interactive
+    PasswordAuthentication no
+
+Match User goose
+    X11Forwarding no
+    AllowTcpForwarding no
+    PermitTunnel no
+    GatewayPorts no
+    ForwardAgent no
+    ForwardX11 no
+    PermitOpen none
+    AllowAgentForwarding no
+    AuthenticationMethods password

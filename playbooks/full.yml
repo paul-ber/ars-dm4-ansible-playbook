@@ -1,0 +1,9 @@
+---
+- name: 'ARS DM4 DMZ infra setup'
+  hosts: infra
+  roles:
+    - role: 'roles/nginx'
+    - role: 'roles/openssh'
+    # - role: 'roles/apache'
+    # - role: 'roles/firewall'
+    # - role: 'roles/fail2ban'

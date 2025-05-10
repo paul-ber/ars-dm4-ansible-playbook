@@ -1,0 +1,7 @@
+infra:
+  hosts:
+    infra01:
+      ansible_host: 192.168.3.2
+      ansible_user: ansible
+      ansible_ssh_pass: ansiblesuperpass
+      ansible_sudo_pass: ansiblesuperpass

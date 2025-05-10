@@ -1,0 +1,19 @@
+- name: Ensure NGINX is installed with the latest version
+  become: true
+  ansible.builtin.apt:
+    name: nginx
+    state: present
+  notify:
+    - Restart NGINX
+
+- name: Remove NGINX default site
+  become: true
+  ansible.builtin.file:
+    path: "/etc/nginx/sites-enabled/default"
+    state: absent
+  notify:
+    - Restart NGINX
+
+- name: Create all files for nginx
+  ansible.builtin.include_tasks:
+    file: add_files.yml

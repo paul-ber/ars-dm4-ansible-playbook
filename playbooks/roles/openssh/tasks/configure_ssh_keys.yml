@@ -1,0 +1,16 @@
+- name: Generate SSH keypair for charlie
+  become: true
+  become_user: charlie
+  ansible.builtin.openssh_keypair:
+    path: /home/charlie/.ssh/id_rsa
+    type: rsa
+    size: 4096
+
+- name: Add charlie's public key to authorized_keys
+  become: true
+  become_user: charlie
+  ansible.builtin.lineinfile:
+    path: /home/charlie/.ssh/authorized_keys
+    line: "{{ lookup('file', '/home/charlie/.ssh/id_rsa.pub') }}"
+    create: true
+    mode: '0600'

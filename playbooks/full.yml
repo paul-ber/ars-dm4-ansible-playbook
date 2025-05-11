@@ -5,5 +5,5 @@
     - role: 'roles/nginx'
     - role: 'roles/openssh'
     # - role: 'roles/apache'
-    # - role: 'roles/firewall'
+    - role: 'roles/firewall'
     # - role: 'roles/fail2ban'

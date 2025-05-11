@@ -1,0 +1,13 @@
+---
+ipv6_default_policies:
+  INPUT: DROP
+  OUTPUT: ACCEPT
+  FORWARD: DROP
+
+ipv6_loopback:
+  - chain: INPUT
+    in_interface: lo
+    jump: ACCEPT
+  - chain: OUTPUT
+    out_interface: lo
+    jump: ACCEPT

@@ -1,0 +1,44 @@
+---
+
+- name: Preconfigure iptables-persistent to auto-save rules
+  debconf:
+    name: iptables-persistent
+    question: "{{ item.question }}"
+    value: "{{ item.value }}"
+    vtype: boolean
+  loop:
+    - { question: 'iptables-persistent/autosave_v4', value: false }
+    - { question: 'iptables-persistent/autosave_v6', value: true }
+  become: true
+  tags: firewall
+
+- name: Install iptables-persistent for IPv6 rule persistence
+  apt:
+    name: iptables-persistent
+    state: present
+    update_cache: yes
+  become: true
+  tags: firewall
+
+- name: Ensure ip6tables default policies
+  ansible.builtin.command: >
+    ip6tables -P {{ item.key }} {{ item.value }}
+  loop: "{{ ipv6_default_policies|dict2items }}"
+  become: true
+  tags: firewall
+
+- name: Allow loopback on IPv6
+  ansible.builtin.command: >
+    ip6tables -A {{ item.chain }}
+               {% if item.in_interface is defined %}-i {{ item.in_interface }}{% endif %}
+               {% if item.out_interface is defined %}-o {{ item.out_interface }}{% endif %}
+               -j {{ item.jump }}
+  loop: "{{ ipv6_loopback }}"
+  become: true
+  tags: firewall
+
+- name: Save ip6tables rules to persistent file
+  ansible.builtin.command: ip6tables-save > /etc/iptables/rules.v6
+  become: true
+  notify: Reload iptables-persistent
+  tags: firewall

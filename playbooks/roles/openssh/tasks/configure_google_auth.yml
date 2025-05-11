@@ -8,6 +8,7 @@
       'Do you want to update your "~/.google_authenticator" file? \(y/n\)': 'y'
       'Enter code from app.*': '-1'
     timeout: 10
+  become: true
   args:
     chdir: "/home/{{ item }}"
     creates: "/home/{{ item }}/.google_authenticator"

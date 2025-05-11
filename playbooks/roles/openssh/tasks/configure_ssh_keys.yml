@@ -4,7 +4,7 @@
     path: /home/charlie/.ssh
     state: directory
     owner: charlie
-    group: charlie
+    group: TOPGUN
     mode: '0700'
 
 - name: Generate SSH keypair for charlie

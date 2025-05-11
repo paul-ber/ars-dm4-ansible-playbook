@@ -20,4 +20,4 @@
     path: /etc/pam.d/sshd
     regexp: '^auth \[success=1 default=ignore\] pam_succeed_if\.so user = goose'
     line: 'auth [success=1 default=ignore] pam_succeed_if.so user = goose'
-  insertbefore: 'auth required pam_google_authenticator.so'
+    insertbefore: 'auth required pam_google_authenticator.so'

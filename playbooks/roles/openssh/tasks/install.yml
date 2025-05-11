@@ -6,5 +6,6 @@
       - libpam-google-authenticator
       - sudo
       - acl
+      - python3-pexpect
     state: present
     update_cache: true

@@ -42,3 +42,53 @@
   become: true
   notify: Reload iptables-persistent
   tags: firewall
+
+
+# --- Début de la section IPv4 ---
+
+- name: Preconfigure iptables-persistent (IPv4 autosave)
+  debconf:
+    name: iptables-persistent
+    question: "{{ item.question }}"
+    value: "{{ item.value }}"
+    vtype: boolean
+  loop:
+    - { question: 'iptables-persistent/autosave_v4', value: true }
+    - { question: 'iptables-persistent/autosave_v6', value: false }
+  become: true
+  tags: firewall
+
+- name: Install iptables-persistent for IPv4 rule persistence
+  apt:
+    name: iptables-persistent
+    state: present
+    update_cache: yes
+  become: true
+  tags: firewall
+
+- name: Ensure iptables default policies (IPv4)
+  ansible.builtin.command: >
+    iptables -P {{ item.key }} {{ item.value }}
+  loop: "{{ ipv4_default_policies|dict2items }}"
+  become: true
+  tags: firewall
+
+- name: Apply base IPv4 rules (loopback, established, SSH, HTTP, HTTPS)
+  ansible.builtin.command: >
+    iptables -A {{ item.chain }} {{ item.rule }}
+  loop: "{{ ipv4_base_rules }}"
+  become: true
+  tags: firewall
+
+- name: Log dropped IPv4 packets
+  ansible.builtin.command: >
+    iptables -A INPUT -m limit --limit 5/min -j LOG
+    --log-prefix "{{ ipv4_log_prefix }}" --log-level 4
+  become: true
+  tags: firewall
+
+- name: Save iptables rules to persistent file (IPv4)
+  ansible.builtin.command: iptables-save > /etc/iptables/rules.v4
+  become: true
+  notify: Reload iptables-persistent
+  tags: firewall

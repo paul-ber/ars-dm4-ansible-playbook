@@ -3,3 +3,5 @@
   ansible.builtin.service:
     name: netfilter-persistent
     state: restarted
+  become: true
+  tags: firewall

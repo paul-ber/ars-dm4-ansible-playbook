@@ -1,8 +1,9 @@
 ---
+# Politiques par défaut IPv6
 ipv6_default_policies:
   INPUT: DROP
-  OUTPUT: ACCEPT
   FORWARD: DROP
+  OUTPUT: REJECT
 
 ipv6_loopback:
   - chain: INPUT
@@ -11,3 +12,25 @@ ipv6_loopback:
   - chain: OUTPUT
     out_interface: lo
     jump: ACCEPT
+
+# Politique par défaut pour IPv4
+ipv4_default_policies:
+  INPUT: DROP
+  FORWARD: DROP
+  OUTPUT: ACCEPT
+
+# Règles IPv4 à ajouter systématiquement
+ipv4_base_rules:
+  - chain: INPUT
+    rule: "-i lo -j ACCEPT"                             # Loopback
+  - chain: INPUT
+    rule: "-m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT"  # Connexions établies
+  - chain: INPUT
+    rule: "-p tcp --dport 22   -m conntrack --ctstate NEW -j ACCEPT"  # SSH
+  - chain: INPUT
+    rule: "-p tcp --dport 8000 -m conntrack --ctstate NEW -j ACCEPT"  # HTTP interne
+  - chain: INPUT
+    rule: "-p tcp --dport 10000 -m conntrack --ctstate NEW -j ACCEPT" # HTTPS interne
+
+# Module de journalisation pour IPv4
+ipv4_log_prefix: "IPTABLES_DROP4: "

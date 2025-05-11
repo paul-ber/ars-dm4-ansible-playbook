@@ -14,7 +14,7 @@ LogLevel VERBOSE
 PasswordAuthentication no
 ChallengeResponseAuthentication yes
 UsePAM yes
-AuthenticationMethods publickey,keyboard-interactive
+AuthenticationMethods publickey keyboard-interactive
 
 # Configuration spécifique par utilisateur
 Match User maverik
@@ -31,8 +31,10 @@ Match User goose
     AllowTcpForwarding no
     PermitTunnel no
     GatewayPorts no
-    ForwardAgent no
-    ForwardX11 no
     PermitOpen none
     AllowAgentForwarding no
     AuthenticationMethods password
+
+Match User ansible
+    AuthenticationMethods password
+    PasswordAuthentication yes

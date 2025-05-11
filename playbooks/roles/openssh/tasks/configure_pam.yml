@@ -1,14 +1,23 @@
-- name: Configure PAM for SSH with Google Authenticator
-  become: true
-  ansible.builtin.lineinfile:
-    path: /etc/pam.d/sshd
-    regexp: '^@include common-auth'
-    line: '# @include common-auth'
-    backup: true
-
 - name: Add Google Authenticator PAM module for SSH
   become: true
   ansible.builtin.lineinfile:
     path: /etc/pam.d/sshd
-    line: 'auth required pam_google_authenticator.so'
+    regexp: '^auth required pam_google_authenticator\.so nullok'
+    line: 'auth required pam_google_authenticator.so nullok'
     insertafter: '^# Standard Un\*x authentication\.'
+
+- name: Configure PAM to exempt ansible user
+  become: true
+  ansible.builtin.lineinfile:
+    path: /etc/pam.d/sshd
+    regexp: '^auth \[success=1 default=ignore\] pam_succeed_if\.so user = ansible'
+    line: 'auth [success=1 default=ignore] pam_succeed_if.so user = ansible'
+    insertbefore: 'auth required pam_google_authenticator.so'
+
+- name: Configure PAM to exempt goose user
+  become: true
+  ansible.builtin.lineinfile:
+    path: /etc/pam.d/sshd
+    regexp: '^auth \[success=1 default=ignore\] pam_succeed_if\.so user = goose'
+    line: 'auth [success=1 default=ignore] pam_succeed_if.so user = goose'
+  insertbefore: 'auth required pam_google_authenticator.so'

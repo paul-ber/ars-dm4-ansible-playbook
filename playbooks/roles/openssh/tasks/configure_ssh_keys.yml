@@ -1,3 +1,12 @@
+- name: S'assurer que le répertoire .ssh existe pour charlie
+  become: true
+  ansible.builtin.file:
+    path: /home/charlie/.ssh
+    state: directory
+    owner: charlie
+    group: charlie
+    mode: '0700'
+
 - name: Generate SSH keypair for charlie
   become: true
   become_user: charlie
@@ -5,12 +14,12 @@
     path: /home/charlie/.ssh/id_rsa
     type: rsa
     size: 4096
+  register: charlie_ssh_key
 
 - name: Add charlie's public key to authorized_keys
   become: true
   become_user: charlie
-  ansible.builtin.lineinfile:
-    path: /home/charlie/.ssh/authorized_keys
-    line: "{{ lookup('file', '/home/charlie/.ssh/id_rsa.pub') }}"
-    create: true
+  ansible.builtin.copy:
+    content: "{{ charlie_ssh_key.public_key }}"
+    dest: /home/charlie/.ssh/authorized_keys
     mode: '0600'

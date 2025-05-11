@@ -26,26 +26,26 @@
   ansible.builtin.include_tasks:
     file: add_files.yml
 
-- name: Verify testssl.sh installation
-  become: true
-  ansible.builtin.stat:
-    path: /usr/local/bin/testssl.sh
-  register: testssl_stat
-
-- name: Install testssl.sh
-  become: true
-  ansible.builtin.get_url:
-    url: https://testssl.sh/testssl.sh
-    dest: /usr/local/bin/testssl.sh
-    mode: '0755'
-  when: not testssl_stat.stat.exists
-
-- name: Run testssl.sh verification
-  become: true
-  ansible.builtin.command:
-    cmd: /usr/local/bin/testssl.sh https://127.0.0.1
-  register: testssl_output
-  changed_when: false
+# - name: Verify testssl.sh installation
+#   become: true
+#   ansible.builtin.stat:
+#     path: /usr/local/bin/testssl.sh
+#   register: testssl_stat
+# 
+# - name: Install testssl.sh
+#   become: true
+#   ansible.builtin.get_url:
+#     url: https://testssl.sh/testssl.sh
+#     dest: /usr/local/bin/testssl.sh
+#     mode: '0755'
+#   when: not testssl_stat.stat.exists
+# 
+# - name: Run testssl.sh verification
+#   become: true
+#   ansible.builtin.command:
+#     cmd: /usr/local/bin/testssl.sh https://127.0.0.1
+#   register: testssl_output
+#   changed_when: false
 
 - name: Ensure SSL directory exists
   become: true

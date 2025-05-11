@@ -123,6 +123,7 @@
       http {
         # Hide server tokens (empreinte numérique)
         server_tokens off;
+        more_set_headers 'Server';
         
         # Basic settings
         sendfile on;

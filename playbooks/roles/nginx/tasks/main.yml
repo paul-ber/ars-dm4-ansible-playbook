@@ -6,6 +6,14 @@
   notify:
     - Restart NGINX
 
+- name: Install nginx headers-more module
+  become: true
+  ansible.builtin.apt:
+    name: nginx-extras
+    state: present
+  notify:
+    - Restart NGINX
+
 - name: Remove NGINX default site
   become: true
   ansible.builtin.file:
@@ -18,26 +26,26 @@
   ansible.builtin.include_tasks:
     file: add_files.yml
 
-# - name: Verify testssl.sh installation
-#   become: true
-#   ansible.builtin.stat:
-#     path: /usr/local/bin/testssl.sh
-#   register: testssl_stat
-# 
-# - name: Install testssl.sh
-#   become: true
-#   ansible.builtin.get_url:
-#     url: https://testssl.sh/testssl.sh
-#     dest: /usr/local/bin/testssl.sh
-#     mode: '0755'
-#   when: not testssl_stat.stat.exists
-# 
-# - name: Run testssl.sh verification
-#   become: true
-#   ansible.builtin.command:
-#     cmd: /usr/local/bin/testssl.sh https://127.0.0.1
-#   register: testssl_output
-#   changed_when: false
+- name: Verify testssl.sh installation
+  become: true
+  ansible.builtin.stat:
+    path: /usr/local/bin/testssl.sh
+  register: testssl_stat
+
+- name: Install testssl.sh
+  become: true
+  ansible.builtin.get_url:
+    url: https://testssl.sh/testssl.sh
+    dest: /usr/local/bin/testssl.sh
+    mode: '0755'
+  when: not testssl_stat.stat.exists
+
+- name: Run testssl.sh verification
+  become: true
+  ansible.builtin.command:
+    cmd: /usr/local/bin/testssl.sh https://127.0.0.1
+  register: testssl_output
+  changed_when: false
 
 - name: Ensure SSL directory exists
   become: true
@@ -62,3 +70,17 @@
     - { content: "{{ ca_ssl_cert }}", dest: "/etc/nginx/ssl/ca.crt" }
   notify:
     - Restart NGINX
+
+- name: Create topgun directory
+  become: true
+  ansible.builtin.file:
+    path: /usr/share/nginx/html/topgun
+    state: directory
+    mode: '0755'
+
+- name: Create index.html with TOP GUN content
+  become: true
+  ansible.builtin.copy:
+    dest: /usr/share/nginx/html/topgun/index.html
+    content: "TOP GUN"
+    mode: '0644'

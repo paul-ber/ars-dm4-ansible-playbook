@@ -66,17 +66,18 @@
   become: true
   tags: firewall
 
-- name: Ensure iptables default policies (IPv4)
-  ansible.builtin.command: >
-    iptables -P {{ item.key }} {{ item.value }}
-  loop: "{{ ipv4_default_policies|dict2items }}"
-  become: true
-  tags: firewall
-
 - name: Apply base IPv4 rules (loopback, established, SSH, HTTP, HTTPS)
   ansible.builtin.command: >
     iptables -A {{ item.chain }} {{ item.rule }}
   loop: "{{ ipv4_base_rules }}"
+  become: true
+  tags: firewall
+
+
+- name: Ensure iptables default policies (IPv4)
+  ansible.builtin.command: >
+    iptables -P {{ item.key }} {{ item.value }}
+  loop: "{{ ipv4_default_policies|dict2items }}"
   become: true
   tags: firewall
 

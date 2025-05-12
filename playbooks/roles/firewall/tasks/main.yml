@@ -66,11 +66,6 @@
   become: true
   tags: firewall
 
-- name: Debug iptables -P INPUT DROP
-  ansible.builtin.command: iptables -P INPUT DROP
-  become: true
-  tags: firewall
-
 - name: Ensure iptables default policies (IPv4)
   ansible.builtin.command: >
     iptables -P {{ item.key }} {{ item.value }}

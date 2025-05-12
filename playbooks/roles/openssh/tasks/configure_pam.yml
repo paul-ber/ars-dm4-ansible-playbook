@@ -22,10 +22,10 @@
     line: 'auth [success=1 default=ignore] pam_succeed_if.so user = goose'
     insertbefore: 'auth required pam_google_authenticator.so'
 
-- name: Configure PAM to exempt maverik user from common-auth
+- name: Configure PAM for SSH with Google Authenticator
   become: true
   ansible.builtin.lineinfile:
     path: /etc/pam.d/sshd
-    regexp: '^auth \[success=2 default=ignore\] pam_succeed_if\.so user = maverik'
-    line: 'auth [success=2 default=ignore] pam_succeed_if.so user = maverik'
-    insertbefore: 'auth required pam_google_authenticator.so'
+    regexp: '^# @include common-auth'
+    line: '# @include common-auth'
+    backup: true

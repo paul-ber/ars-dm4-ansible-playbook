@@ -1,0 +1,61 @@
+- name: Installer les dépendances
+  become: true
+  apt:
+    name:
+      - php
+      - php-curl
+      - php-fpm
+      - php-bcmath
+      - php-gd
+      - php-soap
+      - php-zip
+      - php-curl
+      - php-mbstring
+      - php-mysqlnd
+      - php-gd
+      - php-xml
+      - php-intl
+      - php-zip
+      - mariadb-server
+      - mariadb-client
+      - python3-mysqldb
+      - libarchive-tools
+    state: present
+
+- name: Start MySQL
+  become: true
+  service:
+    name: mysql
+    state: started
+    enabled: yes
+
+- name: Matomo | Check if installed
+  stat:
+    path: /var/www/html/root/stat
+  register: matomo_install
+
+- name: Matomo | Download
+  get_url:
+    url: https://builds.matomo.org/matomo.zip
+    dest: /tmp
+  when: matomo_install.stat.exists == false
+
+- name: Matomo | Create directory
+  become: true
+  ansible.builtin.file:
+    path: "/var/www/html/root/stat"
+    state: directory
+
+- name: Matomo | Extract zip
+  become: true
+  command: bsdtar --strip-components=1 -xvf /tmp/matomo.zip -C /var/www/html/root/stat
+  when: matomo_install.stat.exists == false
+
+- name: Matomo | Configurer les permissions
+  become: true
+  file:
+    path: /var/www/html/root/stat
+    owner: www-data
+    group: www-data
+    mode: '744'
+    recurse: yes

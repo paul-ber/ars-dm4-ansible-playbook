@@ -1,0 +1,115 @@
+- name: Mettre à jour les paquets APT
+  become: true
+  ansible.builtin.apt:
+    update_cache: true
+    name:
+      - apache2
+      - libapache2-mod-security2
+    state: present
+
+- name: Apache ports
+  become: true
+  ansible.builtin.copy:
+    dest: /etc/apache2/ports.conf
+    content: |
+      Listen 127.0.0.1:8000
+      Listen 10000
+      LoadModule security2_module modules/mod_security2.so
+
+- name: Install wordpress
+  ansible.builtin.include_tasks:
+    file: wordpress.yml
+
+- name: Install Matomo
+  ansible.builtin.include_tasks:
+    file: matomo.yml
+
+- name: Install Kerberos
+  ansible.builtin.include_tasks:
+    file: kerberos.yml
+
+- name: Copy Certificates
+  become: true
+  ansible.builtin.copy:
+    src: "{{ apache_cert }}"
+    dest: /etc/apache2/epitaf.crt
+
+- name: Copy private key
+  become: true
+  ansible.builtin.copy:
+    src: "{{ apache_key }}"
+    dest: /etc/apache2/epitaf.key
+
+- name: Configurer Apache pour WordPress et Matomo
+  become: true
+  ansible.builtin.copy:
+    dest: /etc/apache2/sites-available/wordpress.conf
+    content: |
+      <VirtualHost 127.0.0.1:8000>
+        ServerName localhost
+
+        # Serve WordPress and Matomo
+        DocumentRoot /var/www/html/root
+        <Directory /var/www/html/root>
+          Options Indexes FollowSymLinks
+          AllowOverride All
+          Require all granted
+        </Directory>
+
+        SSLEngine on
+        SSLCertificateFile /etc/apache2/epitaf.crt
+        SSLCertificateKeyFile /etc/apache2/epitaf.key
+
+        # Log the real IP
+        LogFormat "%a %l %u %t \"%r\" %>s %b" common
+        CustomLog /var/log/apache2/access.log common
+
+        # Disable GET, POST, PUT requests containing EPITA
+        SecRuleEngine On
+        SecRule ARGS|REQUEST_HEADERS|REQUEST_BODY|REQUEST_URI "EPITA" "id:1000,deny,status:403,msg:'EPITA keyword detected',chain"
+        SecRule REQUEST_METHOD "^(PUT|GET|POST)$"
+      </VirtualHost>
+
+      <VirtualHost *:10000>
+        ServerName localhost
+
+        # Serve WordPress and Matomo
+        DocumentRoot /var/www/html/root
+        <Directory /var/www/html/root>
+          Options Indexes FollowSymLinks
+          AllowOverride All
+          Require all granted
+        </Directory>
+
+        <Location />
+          AuthType GSSAPI
+          AuthName "EPITAF LAN"
+          GssapiCredStore keytab:/etc/apache2/epitaf.keytab
+          Require valid-user
+        </Location>
+
+        SSLEngine on
+        SSLCertificateFile /etc/apache2/epitaf.crt
+        SSLCertificateKeyFile /etc/apache2/epitaf.key
+
+        # Log the real IP
+        LogFormat "%a %l %u %t \"%r\" %>s %b" common
+        CustomLog /var/log/apache2/access.log common
+
+        # Disable GET, POST, PUT requests containing EPITA
+        SecRuleEngine On
+        SecRule ARGS|REQUEST_HEADERS|REQUEST_BODY|REQUEST_URI "EPITA" "id:1000,deny,status:403,msg:'EPITA keyword detected',chain"
+        SecRule REQUEST_METHOD "^(PUT|GET|POST)$"
+      </VirtualHost>
+
+- name: Enable SSL
+  become: true
+  ansible.builtin.command:
+    a2enmod ssl
+
+- name: Redémarrer Apache
+  become: true
+  ansible.builtin.service:
+    name: apache2
+    state: restarted
+    enabled: true

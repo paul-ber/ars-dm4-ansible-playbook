@@ -1,0 +1,96 @@
+- name: Installer les dépendances
+  become: true
+  apt:
+    name:
+      - php
+      - php-curl
+      - php-fpm
+      - php-bcmath
+      - php-gd
+      - php-soap
+      - php-zip
+      - php-curl
+      - php-mbstring
+      - php-mysqlnd
+      - php-gd
+      - php-xml
+      - php-intl
+      - php-zip
+      - mariadb-server
+      - mariadb-client
+      - python3-mysqldb
+    state: present
+
+- name: Démarrer et activer MySQL
+  become: true
+  service:
+    name: mysql
+    state: started
+    enabled: true
+
+- name: Wordpress | Check if installed
+  stat:
+    path: /var/www/html/root/blog
+  register: wordpress_install
+
+- name: Télécharger WordPress
+  get_url:
+    url: https://wordpress.org/wordpress-6.8.1.tar.gz
+    checksum: "sha1:52d5f05c96a9155f78ed84700264307e5dea14b4"
+    dest: /tmp/wordpress.tar.gz
+  when: wordpress_install.stat.exists == false
+
+- name: Create blog directory
+  become: true
+  ansible.builtin.file:
+    path: "/var/www/html/root"
+    state: directory
+  when: wordpress_install.stat.exists == false
+
+- name: Extraire WordPress
+  become: true
+  unarchive:
+    src: /tmp/wordpress.tar.gz
+    dest: /tmp
+    remote_src: true
+  when: wordpress_install.stat.exists == false
+
+- name: Moving wordpress
+  become: true
+  ansible.builtin.copy:
+    remote_src: true
+    src: /tmp/wordpress/
+    dest: /var/www/html/root/blog
+  when: wordpress_install.stat.exists == false
+
+- name: Configurer les permissions
+  become: true
+  file:
+    path: /var/www/html/root
+    owner: www-data
+    group: www-data
+    recurse: yes
+  when: wordpress_install.stat.exists == false
+
+- name: Créer la base de données WordPress
+  become: true
+  mysql_db:
+    name: wordpress
+    state: present
+  when: wordpress_install.stat.exists == false
+
+- name: Créer un utilisateur MySQL pour WordPress
+  become: true
+  mysql_user:
+    name: "{{ wordpress_sql_user }}"
+    password: "{{ wordpress_sql_pass }}"
+    priv: 'wordpress.*:ALL'
+    state: present
+
+- name: Activer le site WordPress
+  become: true
+  command: a2ensite wordpress
+
+- name: Désactiver le site par défaut
+  become: true
+  command: a2dissite 000-default

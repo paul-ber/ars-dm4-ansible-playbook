@@ -1,0 +1,37 @@
+- name: Installation des paquets de Kerberos
+  become: true
+  ansible.builtin.apt:
+    update_cache: true
+    name:
+      - apache2
+      - libapache2-mod-security2
+      - libapache2-mod-auth-gssapi
+      - krb5-user
+    state: present
+
+- name: Krb5 config file
+  become: true
+  ansible.builtin.copy:
+    dest: /etc/krb5.conf
+    content: |
+      [libdefault]
+        default_realm = EPITAF.FR
+      [realms]
+        EPITAF.FR = {
+          kdc           = dc01.epitaf.fr
+          admin_server  = dc01.epitaf.fr
+        }
+      [domain_realm]
+        .epitaf.fr = EPITAF.FR
+      [logging]
+        kdc           = SYSLOG:NOTICE
+        admin_server  = SYSLOG:NOTICE
+        default       = SYSLOG:NOTICE
+
+- name: Add keytab file
+  become: true
+  ansible.builtin.copy:
+    dest: /etc/apache2/epitaf.keytab
+    src: "{{ KeyTabPath }}"
+    owner: "www-data"
+    group: "www-data"

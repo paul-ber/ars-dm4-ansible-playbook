@@ -1,10 +1,11 @@
 ---
 # Politiques par défaut IPv6
 ipv6_default_policies:
-  INPUT: DROP
+  INPUT: DROP        # On droppe toutes les connexions entrantes en IPv6
   FORWARD: DROP
-  OUTPUT: DROP   # Corrigé ici
+  OUTPUT: DROP       # REJECT n'est pas une valeur valide, DROP est utilisé ici pour tout bloquer
 
+# Autoriser la boucle locale IPv6
 ipv6_loopback:
   - chain: INPUT
     in_interface: lo
@@ -15,22 +16,26 @@ ipv6_loopback:
 
 # Politique par défaut pour IPv4
 ipv4_default_policies:
-  INPUT: DROP
+  INPUT: DROP        # On droppe tout par défaut
   FORWARD: DROP
-  OUTPUT: ACCEPT
+  OUTPUT: ACCEPT     # Les connexions sortantes IPv4 sont permises
 
-# Règles IPv4 à ajouter systématiquement
+# Règles IPv4 à ajouter systématiquement (services liés au sujet uniquement)
 ipv4_base_rules:
   - chain: INPUT
-    rule: "-i lo -j ACCEPT"                             # Loopback
+    rule: "-i lo -j ACCEPT"                             # Autoriser le loopback
   - chain: INPUT
     rule: "-m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT"  # Connexions établies
   - chain: INPUT
-    rule: "-p tcp --dport 22   -m conntrack --ctstate NEW -j ACCEPT"  # SSH
+    rule: "-p tcp --dport 22 -m conntrack --ctstate NEW -j ACCEPT"         # SSH (port 22)
   - chain: INPUT
-    rule: "-p tcp --dport 8000 -m conntrack --ctstate NEW -j ACCEPT"  # HTTP interne
+    rule: "-p tcp --dport 8000 -m conntrack --ctstate NEW -j ACCEPT"       # Apache HTTP local
   - chain: INPUT
-    rule: "-p tcp --dport 10000 -m conntrack --ctstate NEW -j ACCEPT" # HTTPS interne
+    rule: "-p tcp --dport 10000 -m conntrack --ctstate NEW -j ACCEPT"      # Apache HTTPS local
+  - chain: INPUT
+    rule: "-p tcp --dport 80 -m conntrack --ctstate NEW -j ACCEPT"         # NGINX port HTTP
+  - chain: INPUT
+    rule: "-p tcp --dport 443 -m conntrack --ctstate NEW -j ACCEPT"        # NGINX port HTTPS
 
-# Module de journalisation pour IPv4
+# Préfixe utilisé pour les logs des paquets IPv4 bloqués
 ipv4_log_prefix: "IPTABLES_DROP4: "

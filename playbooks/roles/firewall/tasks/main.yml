@@ -1,39 +1,20 @@
 ---
-# Pre task to set default parameter (avoid duplicates)
-- name: Flush all existing IPv4 rules
-  ansible.builtin.command: >
-    iptables -F && iptables -X && iptables -t nat -F && iptables -t mangle -F && iptables -t raw -F
-  become: true
-
-- name: Reset IPv4 default policies to ACCEPT
-  ansible.builtin.command: >
-    iptables -P INPUT ACCEPT && iptables -P FORWARD ACCEPT && iptables -P OUTPUT ACCEPT
-  become: true
-
-- name: Flush all existing IPv6 rules
-  ansible.builtin.command: >
-    ip6tables -F && ip6tables -X && ip6tables -t mangle -F && ip6tables -t raw -F
-  become: true
-
-- name: Reset IPv6 default policies to ACCEPT
-  ansible.builtin.command: >
-    ip6tables -P INPUT ACCEPT && ip6tables -P FORWARD ACCEPT && ip6tables -P OUTPUT ACCEPT
-  become: true
-
-# Tasks
+# Configuration IPV6
 - name: Preconfigure iptables-persistent to auto-save rules
+  # Préconfigure le comportement de sauvegarde automatique d'iptables-persistent
   debconf:
     name: iptables-persistent
     question: "{{ item.question }}"
     value: "{{ item.value }}"
     vtype: boolean
   loop:
-    - { question: 'iptables-persistent/autosave_v4', value: false }
-    - { question: 'iptables-persistent/autosave_v6', value: true }
+    - { question: 'iptables-persistent/autosave_v4', value: false }  # Ne pas autosauvegarder les règles IPv4 ici
+    - { question: 'iptables-persistent/autosave_v6', value: true }   # Autosauvegarder les règles IPv6
   become: true
   tags: firewall
 
 - name: Install iptables-persistent for IPv6 rule persistence
+  # Installe le paquet qui rend persistantes les règles iptables
   apt:
     name: iptables-persistent
     state: present
@@ -42,13 +23,15 @@
   tags: firewall
 
 - name: Ensure ip6tables default policies
+  # Applique les politiques par défaut pour IPv6 (DROP INPUT, DROP FORWARD, DROP OUTPUT)
   ansible.builtin.command: >
     ip6tables -P {{ item.key }} {{ item.value }}
-  loop: "{{ ipv6_default_policies|dict2items }}"
+  loop: "{{ ipv6_default_policies | dict2items }}"
   become: true
   tags: firewall
 
 - name: Allow loopback on IPv6
+  # Autorise le trafic sur l'interface loopback pour IPv6 (nécessaire pour les services locaux)
   ansible.builtin.command: >
     ip6tables -A {{ item.chain }}
                {% if item.in_interface is defined %}-i {{ item.in_interface }}{% endif %}
@@ -59,27 +42,30 @@
   tags: firewall
 
 - name: Save ip6tables rules to persistent file
+  # Sauvegarde les règles IPv6 dans /etc/iptables/rules.v6 pour persistance
   ansible.builtin.shell: ip6tables-save > /etc/iptables/rules.v6
   become: true
   notify: Reload iptables-persistent
   tags: firewall
 
 
-# --- Début de la section IPv4 ---
+# --- Configuration IPv4 ---
 
 - name: Preconfigure iptables-persistent (IPv4 autosave)
+  # Préconfigure iptables-persistent pour autosauvegarde des règles IPv4
   debconf:
     name: iptables-persistent
     question: "{{ item.question }}"
     value: "{{ item.value }}"
     vtype: boolean
   loop:
-    - { question: 'iptables-persistent/autosave_v4', value: true }
-    - { question: 'iptables-persistent/autosave_v6', value: false }
+    - { question: 'iptables-persistent/autosave_v4', value: true }   # Autosauvegarder les règles IPv4
+    - { question: 'iptables-persistent/autosave_v6', value: false }  # Ne pas autosauvegarder les règles IPv6 ici
   become: true
   tags: firewall
 
 - name: Install iptables-persistent for IPv4 rule persistence
+  # Installe iptables-persistent pour persister les règles IPv4
   apt:
     name: iptables-persistent
     state: present
@@ -88,21 +74,23 @@
   tags: firewall
 
 - name: Apply base IPv4 rules (loopback, established, SSH, HTTP, HTTPS)
+  # Ajoute les règles de base IPv4 : loopback, connexions établies, SSH, HTTP, HTTPS
   ansible.builtin.command: >
     iptables -A {{ item.chain }} {{ item.rule }}
   loop: "{{ ipv4_base_rules }}"
   become: true
   tags: firewall
 
-
 - name: Ensure iptables default policies (IPv4)
+  # Définit les politiques par défaut IPv4 (DROP INPUT, DROP FORWARD, ACCEPT OUTPUT)
   ansible.builtin.command: >
     iptables -P {{ item.key }} {{ item.value }}
-  loop: "{{ ipv4_default_policies|dict2items }}"
+  loop: "{{ ipv4_default_policies | dict2items }}"
   become: true
   tags: firewall
 
 - name: Log dropped IPv4 packets
+  # Ajoute une règle de journalisation pour les paquets IPv4 DROPPED
   ansible.builtin.command: >
     iptables -A INPUT -m limit --limit 5/min -j LOG
     --log-prefix "{{ ipv4_log_prefix }}" --log-level 4
@@ -110,6 +98,7 @@
   tags: firewall
 
 - name: Save iptables rules to persistent file (IPv4)
+  # Sauvegarde les règles IPv4 dans /etc/iptables/rules.v4 pour persistance
   ansible.builtin.shell: iptables-save > /etc/iptables/rules.v4
   become: true
   notify: Reload iptables-persistent

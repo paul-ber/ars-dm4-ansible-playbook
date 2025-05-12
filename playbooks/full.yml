@@ -9,6 +9,6 @@
       apache_key: 'certificates/infra01.key'
       apache_cert: 'certificates/infra01.crt'
       wordpress_sql_user: 'user'
-      wordpress_sql_pass: 'pass
+      wordpress_sql_pass: 'pass'
     - role: 'roles/firewall'
     - role: 'roles/fail2ban'

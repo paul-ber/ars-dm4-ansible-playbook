@@ -89,7 +89,7 @@
   tags: firewall
 
 - name: Save iptables rules to persistent file (IPv4)
-  ansible.builtin.command: iptables-save > /etc/iptables/rules.v4
+  ansible.builtin.shell: iptables-save > /etc/iptables/rules.v4
   become: true
   notify: Reload iptables-persistent
   tags: firewall

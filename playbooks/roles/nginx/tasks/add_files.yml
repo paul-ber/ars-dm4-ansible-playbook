@@ -5,15 +5,15 @@
     content: |
         # Configuration principale
         server {
-          listen 80;
-          server_name default_server www.epitaf.local blog.epitaf.local;
+          listen 80 default_server;
+          server_name www.epitaf.local blog.epitaf.local;
           return 301 https://$host$request_uri;
         }
 
         # Configuration HTTPS pour www.epitaf.local
         server {
-          listen 443 ssl;
-          server_name default_server www.epitaf.local;
+          listen 443 ssl default_server;
+          server_name www.epitaf.local;
           root /usr/share/nginx/html/topgun;
 
           # Certificats SSL

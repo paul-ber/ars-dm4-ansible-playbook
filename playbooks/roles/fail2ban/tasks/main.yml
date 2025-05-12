@@ -1,0 +1,40 @@
+---
+- name: Install fail2ban
+  apt:
+    name: fail2ban
+    state: present
+    update_cache: yes
+  become: true
+  tags: fail2ban
+  
+- name: Deploy filter definitions
+  template:
+    src: filter.d/{{ item }}.conf
+    dest: /etc/fail2ban/filter.d/{{ item }}.conf
+  loop:
+    - sshd
+    - http-methods
+    - portscan
+  become: true
+  notify: Restart fail2ban
+  tags: fail2ban
+
+- name: Deploy jail configurations
+  template:
+    src: jail.d/{{ item }}.conf
+    dest: /etc/fail2ban/jail.d/{{ item }}.conf
+  loop:
+    - sshd
+    - http-methods
+    - portscan
+  become: true
+  notify: Restart fail2ban
+  tags: fail2ban
+
+- name: Ensure fail2ban is running and enabled
+  service:
+    name: fail2ban
+    state: started
+    enabled: yes
+  become: true
+  tags: fail2ban

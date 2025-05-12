@@ -3,7 +3,7 @@
 ipv6_default_policies:
   INPUT: DROP
   FORWARD: DROP
-  OUTPUT: REJECT
+  OUTPUT: DROP   # Corrigé ici
 
 ipv6_loopback:
   - chain: INPUT

@@ -1,5 +1,26 @@
 ---
+# Pre task to set default parameter (avoid duplicates)
+- name: Flush all existing IPv4 rules
+  ansible.builtin.command: >
+    iptables -F && iptables -X && iptables -t nat -F && iptables -t mangle -F && iptables -t raw -F
+  become: true
 
+- name: Reset IPv4 default policies to ACCEPT
+  ansible.builtin.command: >
+    iptables -P INPUT ACCEPT && iptables -P FORWARD ACCEPT && iptables -P OUTPUT ACCEPT
+  become: true
+
+- name: Flush all existing IPv6 rules
+  ansible.builtin.command: >
+    ip6tables -F && ip6tables -X && ip6tables -t mangle -F && ip6tables -t raw -F
+  become: true
+
+- name: Reset IPv6 default policies to ACCEPT
+  ansible.builtin.command: >
+    ip6tables -P INPUT ACCEPT && ip6tables -P FORWARD ACCEPT && ip6tables -P OUTPUT ACCEPT
+  become: true
+
+# Tasks
 - name: Preconfigure iptables-persistent to auto-save rules
   debconf:
     name: iptables-persistent
